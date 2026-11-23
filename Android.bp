@@ -1,0 +1,42 @@
+license {
+    name: "peridot_xtra_daemon_license",
+    license_kinds: ["SPDX-license-identifier-MIT"],
+    license_text: ["LICENSE"],
+}
+
+cc_binary {
+    name: "peridot_xtra_daemon",
+    stem: "xtra-daemon",
+    vendor: true,
+    licenses: ["peridot_xtra_daemon_license"],
+    compile_multilib: "64",
+    enabled: false,
+    target: {
+        android_arm64: {
+            enabled: true,
+        },
+    },
+    srcs: [
+        "src/xtra_refresh_daemon.cpp",
+        "src/https_download_host.cpp",
+    ],
+    cpp_std: "c++17",
+    cppflags: ["-fexceptions"],
+    cflags: [
+        "-DXTRA_ANDROID_REFRESH_DAEMON",
+        "-mbranch-protection=standard",
+        "-fstack-protector-strong",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+    ],
+    ldflags: ["-Wl,-z,relro,-z,now,-z,noexecstack"],
+    sanitize: {
+        cfi: true,
+    },
+    shared_libs: [
+        "libcurl",
+        "libdl",
+        "liblog",
+    ],
+}

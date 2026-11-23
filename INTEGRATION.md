@@ -5,8 +5,9 @@ This integration preserves `loc_launcher`, `/vendor/etc/izat.conf`, the stock
 libraries. It requires no new init service, root app, public IPC or property
 override.
 
-1. Place the release sources and `Android.bp` under `device/xiaomi/peridot/xtra`.
-   Select `peridot_xtra_daemon` in the device product's `PRODUCT_PACKAGES`.
+1. Sync the standalone repository at `external/peridot-xtra-daemon` through
+   the product manifest, pinned to a reviewed commit. Select
+   `peridot_xtra_daemon` in the device product's `PRODUCT_PACKAGES`.
 2. Remove just `vendor/bin/xtra-daemon` from the device's
    `proprietary-files.txt` and its entry in the shared binder-shim fixup in
    `extract-files.py`. Keep all other entries. Regenerate the proprietary
@@ -28,3 +29,19 @@ override.
 Keep the changes in the device tree and proprietary module list paired when
 rolling forward or back. Do not publish the proprietary tree or blobs with
 this source release.
+
+## Vendor LOC compatibility
+
+The `cc_genrule` consumes the arm64 vendor output of
+`//vendor/xiaomi/peridot:libloc_api_v02` and `compat/loc_profiles.json`. It
+requires an explicitly reviewed SHA-256, then checks the service object/version,
+the decoded layouts and vendor descriptors for `0x21`, `0x29` and `0xA7`, the
+referenced `0x29`/`0xA7` aggregate types, and the three known callback type-ID
+comparisons in the vendor CFI dispatcher. Only this build's reviewed pair is
+compiled into the daemon. The runtime hash, service and layout checks remain.
+These static checks do not verify the final daemon's own CFI/BTI or real modem
+behavior; those are separate image/device checks.
+
+Do not adopt a new blob simply by copying its SHA into the review file.
+Independently review the ABI first. On an unknown build input, validation stops
+instead of lowering the live guard or falling back to the stock downloader.

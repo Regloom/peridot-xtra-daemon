@@ -164,8 +164,11 @@ class RefreshDaemonHostTests(unittest.TestCase):
 
     def test_reviewed_library_table_is_pinned(self):
         text = (ROOT / "src/xtra_refresh_daemon.cpp").read_text()
-        self.assertIn('{"aad764ce43e477cbb48f7444c17f3210cce7235ffb28d039ccd1bdf5f4db13c2", 161}', text)
-        self.assertIn('{"9e55b90b1a0c2e31c5921d97cdf3b2a75834713596488c1bcf60371aa1a1a781", 170}', text)
+        self.assertIn('#include "xtra_loc_profile.h"', text)
+        self.assertIn('xtra::compat::kReviewedLoc', text)
+        self.assertIn('if (!minor) { log("vendor LOC library hash mismatch: disabled"); return 0; }', text)
+        self.assertNotIn('aad764ce43e477cbb', text)
+        self.assertNotIn('9e55b90b1a0c2e31', text)
         self.assertEqual(text.count("service(2, minor, 6)"), 1)
 
     def test_selectors_and_no_forbidden_paths(self):

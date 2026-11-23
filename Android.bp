@@ -4,6 +4,35 @@ license {
     license_text: ["LICENSE"],
 }
 
+python_binary_host {
+    name: "peridot_xtra_loc_profile_tool",
+    main: "tools/gen_loc_profile.py",
+    srcs: ["tools/gen_loc_profile.py"],
+    licenses: ["peridot_xtra_daemon_license"],
+}
+
+cc_genrule {
+    name: "peridot_xtra_loc_profile",
+    vendor: true,
+    compile_multilib: "64",
+    enabled: false,
+    target: {
+        android_arm64: {
+            enabled: true,
+        },
+    },
+    tools: ["peridot_xtra_loc_profile_tool"],
+    srcs: [
+        "compat/loc_profiles.json",
+        "//vendor/xiaomi/peridot:libloc_api_v02",
+    ],
+    out: ["xtra_loc_profile.h"],
+    cmd: "$(location peridot_xtra_loc_profile_tool) " +
+        "--profiles $(location compat/loc_profiles.json) " +
+        "--library $(location //vendor/xiaomi/peridot:libloc_api_v02) --output $(out)",
+    licenses: ["peridot_xtra_daemon_license"],
+}
+
 cc_binary {
     name: "peridot_xtra_daemon",
     stem: "xtra-daemon",
@@ -21,6 +50,7 @@ cc_binary {
         "src/https_download_host.cpp",
     ],
     cpp_std: "c++17",
+    generated_headers: ["peridot_xtra_loc_profile"],
     cppflags: ["-fexceptions"],
     cflags: [
         "-DXTRA_ANDROID_REFRESH_DAEMON",

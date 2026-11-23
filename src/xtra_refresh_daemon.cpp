@@ -52,6 +52,7 @@
 #include <vector>
 #ifdef XTRA_ANDROID_REFRESH_DAEMON
 #include <android/log.h>
+#include "xtra_loc_profile.h"
 #endif
 
 namespace {
@@ -62,12 +63,9 @@ constexpr size_t kLocalCap = 1024 * 1024;  // local resource cap, NOT a modem li
 
 struct Config {
     std::string library = "/vendor/lib64/libloc_api_v02.so";
-    // Reviewed vendor LOC builds -> exact IDL minor its service lookup accepts
-    // (LOC_LIB_20261115_ABI_REVIEW.md). Any other library: disabled, exit 0.
-    std::vector<std::pair<std::string, int32_t>> libraries{
-        {"aad764ce43e477cbb48f7444c17f3210cce7235ffb28d039ccd1bdf5f4db13c2", 161},
-        {"9e55b90b1a0c2e31c5921d97cdf3b2a75834713596488c1bcf60371aa1a1a781", 170}};
-    int32_t host_minor = 0;  // HOST fake only (empty table)
+#ifdef XTRA_DAEMON_HOST_TEST
+    int32_t host_minor = 0;
+#endif
     std::string state_dir = "/data/vendor/location/peridot-xtra";
     std::string ca_path = "/system/etc/security/cacerts";
     int64_t success_gap_ms = 6LL * 3600 * 1000;
@@ -297,7 +295,9 @@ void cycle(Session& s, const Loc& loc, const Config& cfg, StateStore& store, Lim
 
 // Exact IDL minor for a reviewed library, or 0 for any other/unreadable file.
 int32_t libraryMinor(const Config& cfg) {
-    if (cfg.libraries.empty()) return cfg.host_minor;
+#ifdef XTRA_DAEMON_HOST_TEST
+    return cfg.host_minor;
+#else
     const int fd = open(cfg.library.c_str(), O_RDONLY | O_CLOEXEC);
     if (fd < 0) return 0;
     std::vector<uint8_t> bytes;
@@ -309,9 +309,10 @@ int32_t libraryMinor(const Config& cfg) {
     }
     close(fd);
     const std::string sha = xtra::fileSha256(bytes.data(), bytes.size());
-    for (const auto& known : cfg.libraries)
-        if (known.first == sha) return known.second;
+    for (const auto& known : xtra::compat::kReviewedLoc)
+        if (known.sha256 == sha) return known.minor;
     return 0;
+#endif
 }
 
 int run(const Config& cfg) {
@@ -400,7 +401,7 @@ int main(int argc, char** argv) {
     if (argc != 3 && argc != 4) return 2;
     fakeCurlConfigure(getenv("MOCK_CURL_MODE") ? getenv("MOCK_CURL_MODE") : "success");
     Config cfg;
-    cfg.library = argv[1]; cfg.libraries.clear(); cfg.host_minor = argc == 4 ? std::atoi(argv[3]) : 161; cfg.state_dir = argv[2]; cfg.ca_path = "/fake/cacerts";
+    cfg.library = argv[1]; cfg.host_minor = argc == 4 ? std::atoi(argv[3]) : 161; cfg.state_dir = argv[2]; cfg.ca_path = "/fake/cacerts";
     cfg.success_gap_ms = 1500; cfg.backoff_ms = {{400, 800, 1200}}; cfg.daily_cap = 3; cfg.day_ms = 6000;
     cfg.download_ms = 1000; cfg.transfer_ms = 2000; cfg.part_ms = 400; cfg.reopen_min_ms = 200; cfg.reopen_max_ms = 400;
     return run(cfg);

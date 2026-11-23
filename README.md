@@ -41,9 +41,12 @@ No unsolicited send, retry of parts, status poll, or aiding-data deletion.
 The stock A-GPS switch controls the existing launcher lifecycle. The daemon
 does not query the setting independently.
 
-Reviewed vendor LOC binaries are pinned by SHA-256 and exact IDL minor. Unknown
-binaries leave the downloader disabled; updating LineageOS may require a new
-ABI review. The daemon uses no periodic timer while waiting for an event.
+Reviewed vendor LOC binaries are listed in [`compat/loc_profiles.json`](compat/loc_profiles.json).
+Soong checks the actual Peridot vendor LOC module output and generates a pin
+for that one SHA-256 and IDL minor. An unknown binary fails build-time review;
+a mismatch at runtime disables the downloader without a crash/restart loop.
+Updating vendor blobs may require a new ABI review. The daemon uses no periodic
+timer while waiting for an event.
 Attempts and rate limits are stored under `/data/vendor/location/peridot-xtra`.
 The six-hour gap is a local minimum between successes, **not** a refresh
 schedule or a prediction of the modem's next request.
@@ -67,8 +70,8 @@ set `XTRA_CURL_INCLUDE` to the directory containing `curl/curl.h`.
 
 ## LineageOS integration
 
-Place this repository under `device/xiaomi/peridot/xtra` (or an imported Soong
-namespace). Select `peridot_xtra_daemon` in the Peridot product and **exclude
+Sync this repository via the product manifest at `external/peridot-xtra-daemon`.
+Select `peridot_xtra_daemon` in the Peridot product and **exclude
 the old proprietary `xtra-daemon` producer**. Both modules install to
 `/vendor/bin/xtra-daemon`; do not select both. See [integration notes](INTEGRATION.md).
 

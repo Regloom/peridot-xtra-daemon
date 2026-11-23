@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "profiles": {
+    "aad764ce43e477cbb48f7444c17f3210cce7235ffb28d039ccd1bdf5f4db13c2": {
+      "minor": 161,
+      "types": {"limits": 25, "servers": 26, "url": 23, "file_info": 27}
+    },
+    "9e55b90b1a0c2e31c5921d97cdf3b2a75834713596488c1bcf60371aa1a1a781": {
+      "minor": 170,
+      "types": {"limits": 24, "servers": 25, "url": 22, "file_info": 26}
+    }
+  }
+}
